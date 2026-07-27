@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Un ProjectReference por módulo — hoy solo Configuración; cada
+         módulo nuevo (06-Modules/*) agrega su propio .Api aquí, sin que
+         los módulos se referencien entre sí (08-Backend/README.md). -->
+    <ProjectReference Include="..\..\Modules\Configuracion\FieldOps.Modules.Configuracion.Api\FieldOps.Modules.Configuracion.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Configuracion\FieldOps.Modules.Configuracion.Infrastructure\FieldOps.Modules.Configuracion.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Shared\FieldOps.Shared.Tenancy\FieldOps.Shared.Tenancy.csproj" />
+    <ProjectReference Include="..\..\Shared\FieldOps.Shared.Outbox\FieldOps.Shared.Outbox.csproj" />
+  </ItemGroup>
+</Project>

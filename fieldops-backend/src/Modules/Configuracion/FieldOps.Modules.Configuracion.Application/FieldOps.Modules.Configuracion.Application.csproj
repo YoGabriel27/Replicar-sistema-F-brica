@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FieldOps.Modules.Configuracion.Domain\FieldOps.Modules.Configuracion.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\FieldOps.Shared.Kernel\FieldOps.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\..\Shared\FieldOps.Shared.Tenancy\FieldOps.Shared.Tenancy.csproj" />
+    <ProjectReference Include="..\..\..\Shared\FieldOps.Shared.Outbox\FieldOps.Shared.Outbox.csproj" />
+  </ItemGroup>
+</Project>

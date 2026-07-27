@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/*
+  Sistema de diseño FIELDOPS — ver SYSTEM_BLUEPRINT/14-UX (pendiente de
+  redactar en detalle) y 01-Product/README.md §UX (inspiración: Linear,
+  Notion, Stripe, Atlassian, Power BI).
+
+  Dirección: "torre de control" — el back-office es donde un supervisor
+  vigila el estado de cientos de activos y OT a la vez. La paleta evita
+  los dos defaults genéricos de IA (cream+terracota / negro+neón):
+  fondo casi blanco y frío, un acento "señal" turquesa (evoca estado
+  operativo/conectividad, no decoración), y ámbar reservado
+  estrictamente para "atención" (vencido, bajo stock), nunca decorativo.
+*/
+
+:root {
+  --background: #f7f8fa;
+  --surface: #ffffff;
+  --foreground: #12172b;
+  --foreground-muted: #5b6478;
+
+  --sidebar: #12172b;
+  --sidebar-foreground: #e8eaf0;
+  --sidebar-muted: #8993ac;
+
+  --signal: #00a99d;       /* acento primario — "señal" de operación */
+  --signal-foreground: #ffffff;
+  --attention: #f59e0b;    /* vencido, bajo stock, requiere revisión */
+  --critical: #e5484d;     /* error real, nunca decorativo */
+
+  --border: #e4e7ee;
+
+  /* Sin acceso a Google Fonts en este sandbox (ver app/layout.tsx) —
+     pila de sistema que aproxima Space Grotesk/Inter. Con red normal,
+     reemplazar por var(--font-space-grotesk) / var(--font-inter). */
+  --font-display: "Segoe UI Semibold", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-attention: var(--attention);
+  --color-critical: var(--critical);
+  --color-border: var(--border);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+}
