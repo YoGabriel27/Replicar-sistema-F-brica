@@ -1,0 +1,12 @@
+# Se combina con fieldops-backend/docker-compose.yml (Postgres + Redis).
+# Este archivo solo agrega el contenedor "app" donde vive el código y
+# donde corren dotnet/npm — Codespaces lo arma automáticamente.
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/dotnet:1-9.0
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    depends_on:
+      - postgres
+      - redis
