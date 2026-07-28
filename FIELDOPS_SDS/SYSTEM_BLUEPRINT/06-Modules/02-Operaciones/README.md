@@ -4,7 +4,7 @@
 
 **Estado:** `Draft v0.1`
 **Depende de:** `03-Domain-Model/README.md`, `04-Architecture/README.md`, `05-Database/README.md`
-**De este documento dependen:** `06-Modules/03-Logistica` (dispatch), `06-Modules/05-Finanzas` (costeo), `06-Modules/06-BI` (KPIs), `09-Mobile/`, `10-AI/`
+**De este documento dependen:** `06-Modules/03-Logistica` (dispatch), `06-Modules/05-Finanzas` (costeo), `06-Modules/06-BI` (KPIs), `09-Mobile/`, `10-AI/`, `11-Integrations/` (envío de remitos por email)
 
 ---
 
@@ -47,9 +47,10 @@ Un activo existe y tiene historial aunque nunca se le haya abierto una OT.
 |---|---|---|
 | `Asset` | Asset & Maintenance | pertenece a un `Client` y un `Company` (tenant) |
 | `MaintenancePlan` | Asset & Maintenance | frecuencia (tiempo o uso), referencia `Asset` |
-| `Checklist` | Asset & Maintenance | plantilla de verificación, referenciada por `MaintenancePlan` y por `WorkOrder` |
+| `ChecklistTemplate` | Asset & Maintenance | **constructor de formularios dinámicos** (checklist, desplegables, firma) — un Admin lo arma sin programar; referenciada por `MaintenancePlan` y por `WorkOrder` |
 | `WorkOrder` | Work Order | referencia `Asset`, tiene `WorkOrderStatus` |
-| `WorkOrderEvidence` | Work Order | fotos, checklist completado, firma; referencia `WorkOrder` |
+| `WorkOrderEvidence` | Work Order | fotos (con estampado de GPS/fecha/hora), checklist completado, firma; referencia `WorkOrder` |
+| `WorkOrderReceipt` | Work Order | **remito en PDF**, generado en el dispositivo al cierre, firmado por el cliente; referencia `WorkOrder` |
 
 ## Relationships
 
@@ -59,6 +60,9 @@ Un activo existe y tiene historial aunque nunca se le haya abierto una OT.
 - `MaintenancePlan` genera `WorkOrder` automáticamente al vencer (evento
   `MaintenancePlanTriggered`, ver `03-Domain-Model/`).
 - `WorkOrder` 1—* `WorkOrderEvidence`.
+- `WorkOrder` 1—0..1 `WorkOrderReceipt` (el remito solo existe si la OT se
+  cerró con firma del cliente — no toda OT tiene uno, p. ej. tareas sin
+  presencia del cliente en el sitio).
 - `WorkOrder` *—1 `Dispatch` (externo, `06-Modules/03-Logistica`) — Operaciones
   no decide quién ejecuta, solo consume el resultado de la asignación.
 - `WorkOrder` 1—0..1 `CostEntry` (externo, `06-Modules/05-Finanzas`), generado
@@ -67,8 +71,12 @@ Un activo existe y tiene historial aunque nunca se le haya abierto una OT.
 ## Commands
 
 `CreateAsset`, `UpdateAsset`, `RetireAsset`, `CreateMaintenancePlan`,
-`UpdateMaintenancePlan`, `CreateWorkOrder` (manual), `StartWorkOrder`,
-`AddWorkOrderEvidence`, `CloseWorkOrder`, `CancelWorkOrder`,
+`UpdateMaintenancePlan`, `CreateChecklistTemplate`, `UpdateChecklistTemplate`
+(constructor de formularios — Admin arma campos: texto, checkbox,
+desplegable, firma, foto, sin programar), `CreateWorkOrder` (manual),
+`StartWorkOrder`, `AddWorkOrderEvidence`, `GenerateWorkOrderReceipt`
+(genera el PDF/remito en el dispositivo al cierre), `ResendWorkOrderReceipt`
+(reenvío por email desde el panel web), `CloseWorkOrder`, `CancelWorkOrder`,
 `ReopenWorkOrder` (excepcional, requiere permiso de Supervisor).
 
 ## Queries
@@ -82,7 +90,9 @@ Dispatch, solo lectura aquí).
 
 **Emitidos:** `AssetCreated`, `AssetRetired`, `MaintenancePlanTriggered`,
 `WorkOrderCreated`, `WorkOrderStarted`, `WorkOrderClosed`,
-`WorkOrderCancelled`, `WorkOrderReopened`.
+`WorkOrderCancelled`, `WorkOrderReopened`, `WorkOrderReceiptGenerated`
+(consumido por `06-Modules/05-Finanzas`/`11-Integrations` para el envío
+por email desde el panel web).
 **Consumidos:** `WorkOrderDispatched` (de Logística, habilita `StartWorkOrder`),
 `TechnicianAssigned` (de RRHH/Logística, se refleja en la vista de la OT).
 
@@ -112,6 +122,28 @@ Dispatch, solo lectura aquí).
    Cada `MaintenancePlan` vence y genera OT de forma independiente; no hay
    deduplicación automática si dos planes vencen el mismo día para el
    mismo activo (se crean dos OT separadas, a propósito).
+8. **Toda foto de `WorkOrderEvidence` lleva coordenadas GPS, fecha y hora
+   estampadas de forma visible sobre la propia imagen** (no solo como
+   metadato aparte) — la captura es exclusivamente por la cámara interna
+   de la app (nunca desde la galería del dispositivo), para que el
+   estampado no pueda evitarse.
+9. `GenerateWorkOrderReceipt` se ejecuta **en el dispositivo, en el
+   momento del cierre** — no es un reporte generado después en el
+   servidor. Requiere la firma del cliente capturada en pantalla; si el
+   cliente no está presente para firmar, la OT puede cerrarse igual
+   (regla #4 ya cubre evidencia obligatoria) pero sin `WorkOrderReceipt`
+   asociado.
+10. `ChecklistTemplate` se arma con un constructor visual (campos de
+    texto, checkbox, lista desplegable, firma, foto) — un Admin no
+    requiere intervención de un programador para crear o modificar una
+    plantilla.
+11. **Un Técnico puede crear una OT "espontánea"** directamente desde el
+    campo (aporte del colega — "partes de trabajo espontáneos") sin pasar
+    por Supervisor: se auto-asigna a su propio `Crew` y **omite el flujo
+    normal de `Dispatch`** de `06-Modules/03-Logistica` (no tiene sentido
+    despachar algo a quien ya está en el sitio ejecutándolo). Emite
+    `WorkOrderCreated` y `WorkOrderDispatched` en el mismo momento, no en
+    dos pasos — sigue requiriendo `Asset` válido y no retirado (regla #1).
 
 ## Permissions
 
@@ -119,7 +151,7 @@ Dispatch, solo lectura aquí).
 |---|---|---|---|---|---|
 | Crear/editar Asset | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Ver historial de Asset | ✅ | ✅ | Solo asignados | ✅ (solo lectura) | Solo el suyo |
-| Crear OT manual | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Crear OT manual | ✅ | ✅ | ✅ (solo "espontánea", ver regla #11) | ❌ | ❌ |
 | Iniciar/cerrar OT | ✅ | ✅ | Solo asignada | ❌ | ❌ |
 | Reabrir OT (motivo obligatorio) | ✅ | ✅ | ❌ | ❌ | ❌ |
 
@@ -129,15 +161,23 @@ Dispatch, solo lectura aquí).
   Linear/Notion, con estado de mantenimiento (al día / próximo a vencer /
   vencido) como badge visual.
 - **Ficha de Activo**: historial completo de OT, planes de mantenimiento
-  activos, documentos.
+  activos, documentos, **mapa con la ubicación del activo**.
+- **Constructor de Formularios (Admin)**: arma/edita `ChecklistTemplate`
+  arrastrando campos (texto, checkbox, desplegable, firma, foto) — sin
+  código.
 - **Tablero de Órdenes de Trabajo** (web): kanban por `WorkOrderStatus`
   (Creada → Despachada → En ejecución → Cerrada), filtrable por técnico,
   cliente, prioridad.
-- **Detalle de OT**: checklist, evidencia, historial de estado.
+- **Detalle de OT**: checklist, evidencia, historial de estado,
+  **visor de fotos en alta calidad** (zoom, sin recompresión agresiva),
+  **mapa con la ubicación exacta de la tarea**, remito PDF si existe.
+- **Repositorio de Remitos**: listado centralizado de `WorkOrderReceipt`,
+  descarga y reenvío por email (ver `11-Integrations/`).
 - **Mobile — Mis OT**: lista simple de OT asignadas al técnico, ordenadas
   por urgencia.
 - **Mobile — Ejecutar OT**: un solo flujo lineal — checklist → fotos →
-  firma → cerrar, funcional 100% offline.
+  firma → cerrar, funcional 100% offline; genera el remito en el
+  dispositivo al cierre (regla #9).
 
 ## Wireframes
 
@@ -153,7 +193,7 @@ Query + optimistic UI).
 - **Creación manual de OT:** activo, prioridad, descripción, checklist a
   usar (heredado del plan de mantenimiento si aplica).
 - **Checklist de ejecución (mobile):** dinámico, generado desde la
-  plantilla `Checklist` del `MaintenancePlan` o de la OT.
+  plantilla `ChecklistTemplate` del `MaintenancePlan` o de la OT.
 
 ## Filters
 
@@ -198,8 +238,9 @@ Candidatos a documentar en detalle en `10-AI/`, no se construyen aquí:
 ## APIs
 
 Contrato REST por bounded context (detalle de rutas en `08-Backend/`):
-`/assets`, `/assets/{id}/history`, `/maintenance-plans`, `/work-orders`,
-`/work-orders/{id}/evidence`, `/work-orders/{id}/close`. Todos con
+`/assets`, `/assets/{id}/history`, `/maintenance-plans`,
+`/checklist-templates`, `/work-orders`, `/work-orders/{id}/evidence`,
+`/work-orders/{id}/receipt`, `/work-orders/{id}/close`. Todos con
 `company_id` implícito vía autenticación (regla `04-Architecture/` #4).
 
 ## Validations
@@ -214,7 +255,9 @@ Contrato REST por bounded context (detalle de rutas en `08-Backend/`):
 
 Catálogo conceptual (códigos exactos en `08-Backend/`): `AssetNotFound`,
 `AssetRetiredCannotCreateWorkOrder`, `WorkOrderInvalidStatusTransition`,
-`WorkOrderEvidenceRequiredToClose`, `WorkOrderNotDispatched`.
+`WorkOrderEvidenceRequiredToClose`, `WorkOrderNotDispatched`,
+`EvidencePhotoMissingGeoStamp` (foto no capturada por la cámara interna de
+la app — regla #8).
 
 ## Acceptance Criteria
 
@@ -239,8 +282,9 @@ Catálogo conceptual (códigos exactos en `08-Backend/`): `AssetNotFound`,
 ## Future Improvements
 
 - Mantenimiento predictivo real (ver `10-AI/`), hoy fuera del MVP.
-- Plantillas de `Checklist` versionadas (que un cambio en la plantilla no
-  afecte checklists ya en curso).
+- `ChecklistTemplate` versionada (que un cambio en la plantilla no afecte
+  checklists ya en curso) — el constructor dinámico (regla #10) lo hace
+  más urgente que en el diseño anterior, no menos.
 
 ## Open Questions
 
@@ -249,6 +293,12 @@ Catálogo conceptual (códigos exactos en `08-Backend/`): `AssetNotFound`,
 2. ¿Existe un límite razonable de reaperturas por OT, o se permite sin
    tope siempre que quede auditado? (relevante para detectar mal uso del
    flujo, no para bloquearlo de entrada).
+3. ¿El envío de `WorkOrderReceipt` por email usa el mismo proveedor que se
+   defina en `11-Integrations/` para otras notificaciones, o uno propio
+   dedicado a documentos legales/remitos?
 
-> Resueltas en esta iteración: reapertura de OT (regla #6) y múltiples
-> planes de mantenimiento simultáneos por activo (regla #7).
+> Resueltas en esta iteración: reapertura de OT (regla #6), múltiples
+> planes de mantenimiento simultáneos por activo (regla #7), y — a partir
+> del aporte de un colega sobre la app de campo — estampado de evidencia
+> fotográfica (regla #8), remito generado en el dispositivo (regla #9) y
+> constructor de formularios dinámicos (regla #10).
