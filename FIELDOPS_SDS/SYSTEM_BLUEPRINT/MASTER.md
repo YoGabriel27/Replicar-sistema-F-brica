@@ -180,7 +180,7 @@ sin excepción.
 | 03-Domain-Model | ✅ Draft v0.1 |
 | 04-Architecture | ✅ Draft v0.1 |
 | 05-Database | ✅ Draft v0.1 |
-| 06-Modules/* (7) | ✅ 7/7 en Draft v0.1 |
+| 06-Modules/* (7) | ✅ 7/7 en Draft v0.1 (Operaciones actualizado — ver nota abajo) |
 | 07-Frontend | ✅ Draft v0.1 |
 | 08-Backend | ✅ Draft v0.1 |
 | 09-Mobile | ✅ Draft v0.1 |
@@ -239,3 +239,35 @@ tocar Finanzas o Security en código,
 (c) generar el scaffold inicial del repositorio (estructura de carpetas de
 `07-Frontend/` y `08-Backend/`, sin lógica de negocio aún) como punto de
 partida concreto para el equipo.
+
+## 13. Reconciliación con especificación de un colega (app de campo)
+
+Un colega del equipo redactó independientemente una especificación de la
+app de campo/panel web que coincidía en gran parte con
+`06-Modules/02-Operaciones/` y `09-Mobile/`, pero aportó 7 detalles
+concretos que no estaban documentados. Ya incorporados:
+
+1. Constructor de formularios dinámicos sin código →
+   `ChecklistTemplate` (`06-Modules/02-Operaciones/` regla #10).
+2. Estampado de GPS/fecha/hora sobre la foto (no solo como metadato) →
+   regla #8 del mismo documento, regla #6 de `09-Mobile/`.
+3. Alerta de poco almacenamiento en el dispositivo → `09-Mobile/` regla #7.
+4. Botón de sincronización manual → `09-Mobile/` regla #5.
+5. Remito PDF generado y firmado en el dispositivo al cierre →
+   `WorkOrderReceipt`, regla #9 de Operaciones.
+6. Repositorio central de remitos + reenvío por email → nueva pantalla en
+   Operaciones, dependencia agregada hacia `11-Integrations/`.
+7. Visor de fotos en alta calidad + mapa de ubicación → nuevas pantallas
+   en Operaciones.
+
+**Hallazgo adicional no anticipado:** el colega asumía que un técnico
+puede crear tareas ("partes de trabajo espontáneos") sin pasar por un
+Supervisor — esto contradecía la tabla de permisos original, que
+restringía la creación de OT a Admin/Supervisor. Se resolvió a favor del
+colega: **regla #11** de `06-Modules/02-Operaciones/` — el técnico puede
+crear una OT "espontánea" que se auto-asigna a su propio `Crew`, saltando
+el flujo normal de `Dispatch`.
+
+Este tipo de reconciliación es exactamente para lo que sirve el
+`Draft v0.1` de cada documento — no se trata como error del blueprint
+original, sino como el proceso normal de refinar con más información.
