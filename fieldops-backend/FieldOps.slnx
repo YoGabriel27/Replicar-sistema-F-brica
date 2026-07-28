@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/FieldOps.Host/FieldOps.Host.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Configuracion/">
+    <Project Path="src/Modules/Configuracion/FieldOps.Modules.Configuracion.Api/FieldOps.Modules.Configuracion.Api.csproj" />
+    <Project Path="src/Modules/Configuracion/FieldOps.Modules.Configuracion.Application/FieldOps.Modules.Configuracion.Application.csproj" />
+    <Project Path="src/Modules/Configuracion/FieldOps.Modules.Configuracion.Domain/FieldOps.Modules.Configuracion.Domain.csproj" />
+    <Project Path="src/Modules/Configuracion/FieldOps.Modules.Configuracion.Infrastructure/FieldOps.Modules.Configuracion.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/FieldOps.Shared.Kernel/FieldOps.Shared.Kernel.csproj" />
+    <Project Path="src/Shared/FieldOps.Shared.Outbox/FieldOps.Shared.Outbox.csproj" />
+    <Project Path="src/Shared/FieldOps.Shared.Tenancy/FieldOps.Shared.Tenancy.csproj" />
+  </Folder>
+</Solution>
