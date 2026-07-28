@@ -1,6 +1,3 @@
-# Se combina con fieldops-backend/docker-compose.yml (Postgres + Redis).
-# Este archivo solo agrega el contenedor "app" donde vive el código y
-# donde corren dotnet/npm — Codespaces lo arma automáticamente.
 services:
   postgres:
     image: postgres:16
