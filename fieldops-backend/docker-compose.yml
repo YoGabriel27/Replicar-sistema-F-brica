@@ -2,11 +2,28 @@
 # Este archivo solo agrega el contenedor "app" donde vive el código y
 # donde corren dotnet/npm — Codespaces lo arma automáticamente.
 services:
-  app:
-    image: mcr.microsoft.com/devcontainers/dotnet:1-9.0
+  postgres:
+    image: postgres:16
+    container_name: fieldops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fieldops
+      POSTGRES_USER: fieldops
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
     volumes:
-      - ../..:/workspaces:cached
-    command: sleep infinity
-    depends_on:
-      - postgres
-      - redis
+      - fieldops_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: fieldops-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - fieldops_redis_data:/data
+
+volumes:
+  fieldops_postgres_data:
+  fieldops_redis_data:
